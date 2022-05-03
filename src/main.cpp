@@ -402,6 +402,8 @@ recorderPress();
 
 //readGPS(); 
 
+oocsi.check();
+
 }
 
 
