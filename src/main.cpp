@@ -31,6 +31,8 @@ const char *OOCSIName = "M12_Food_Probe_1";
 const char *hostserver = "oocsi.id.tue.nl";
 //name of the general oocsi channel
 const char *DF_Channel = "food_probe_data";
+//id of teh device in DF
+const char *DF_device_id = "d22ef808fbc614293";
 
 // SSID of your Wifi network, the library currently does not support WPA2 Enterprise networks
 const char* ssid = "The Donut Wifi";
@@ -79,12 +81,64 @@ int recorderButton=16;
 const char* recorderButtonName="Recorder";
 int recorderButtonState = 0, recorderButtonStatePrev=0;
 
+//Display animations ------------------------------------------------------------------
+void draw(const char *s, const char *ss=" ", int loading=0)
+{
+  u8g2.setDrawColor(0);		// clear the scrolling area
+  u8g2.drawBox(0, 49, u8g2.getDisplayWidth()-1, u8g2.getDisplayHeight()-1);
+  u8g2.setDrawColor(1);		// set the color for the text
 
+  int16_t len = strlen(s);
+  int16_t offset = (int16_t)u8g2.getDisplayWidth()-len*8;
+
+  int16_t len2 = strlen(ss);
+  int16_t offset2 = (int16_t)u8g2.getDisplayWidth()-len2*8;
+
+  int dx=40, dy=20;
+  
+  if (!loading)
+  {
+    u8g2.clearBuffer();					// clear the internal memory
+    u8g2.drawStr(offset/2, 45, s);
+    u8g2.drawStr(offset2/2, 62, ss);
+    u8g2.sendBuffer();
+  } else {
+
+    u8g2.clearBuffer();					// clear the internal memory
+    u8g2.drawDisc (dx, dy, 5);
+    u8g2.drawStr(offset/2, 45, s);
+    u8g2.drawStr(offset2/2, 62, ss);
+    u8g2.sendBuffer();
+    delay (1000);
+
+    u8g2.clearBuffer();					// clear the internal memory
+    u8g2.drawDisc (dx, dy, 5);
+    u8g2.drawDisc (dx+25, dy, 5);
+    u8g2.drawStr(offset/2, 45, s);
+    u8g2.drawStr(offset2/2, 62, ss);
+    u8g2.sendBuffer();
+    delay (1000);
+
+    u8g2.clearBuffer();					// clear the internal memory
+    u8g2.drawDisc (dx, dy, 5);
+    u8g2.drawDisc (dx+25, dy, 5);
+    u8g2.drawDisc (dx+50, dy, 5);
+    u8g2.drawStr(offset/2, 45, s);
+    u8g2.drawStr(offset2/2, 62, ss);
+    u8g2.sendBuffer();
+    delay (1500);
+
+  }
+
+  
+}
+
+//setup function --------------------------------------------------------------------
 
 void setup() {
   //begin u8g2
   u8g2.begin();
-  u8g2.setFont(u8g2_font_ncenB08_tr);
+  u8g2.setFont(u8g2_font_8x13_mf);
   u8g2.enableUTF8Print();
 
   //egin GPS
@@ -107,12 +161,20 @@ void setup() {
   //begin serial
   Serial.begin(115200);
   Serial.println ("Hello");
+  draw("Hello there!");
+
+  delay(500);
+
+  draw("Connecting", "to WIFI!", 1);
+
 
   //WIFI Connection
   oocsi.connect(OOCSIName, hostserver, ssid, password);
   Serial.print("Successfully connected to: ");
   Serial.println(ssid);
 
+  draw("Connected to", ssid);
+  delay (3000);
 }
 
 
@@ -120,6 +182,10 @@ void setup() {
 
 void listenForButtons()
 {
+  //screen test
+  draw ("Listening for", "interactions!");
+
+
   //listen for toggle buttons module
   greenButtonStatePrev=greenButtonState;
   if (digitalRead(greenButton)==HIGH)
@@ -180,6 +246,7 @@ if (greenButtonState!=greenButtonStatePrev)
 
     //send OOCSI message
     oocsi.newMessage(DF_Channel);
+    oocsi.addString("device_id", DF_device_id);
     oocsi.addString("Interaction", greenButtonName);
     oocsi.addString("Event", "ON");
     oocsi.sendMessage();
@@ -196,11 +263,13 @@ if (greenButtonState!=greenButtonStatePrev)
 
     //send OOCSI message
     oocsi.newMessage(DF_Channel);
+    oocsi.addString("device_id", DF_device_id);
     oocsi.addString("Interaction", greenButtonName);
     oocsi.addString("Event", "OFF");
     oocsi.sendMessage();
 
     //give user feedback on screen
+    draw ("Registered event", greenButtonName, 1);
  
 
   }
@@ -220,6 +289,11 @@ if (redButtonState!=redButtonStatePrev)
     digitalWrite(redButtonLED, HIGH);
 
     //send OOCSI message
+    oocsi.newMessage(DF_Channel);
+    oocsi.addString("device_id", DF_device_id);
+    oocsi.addString("Interaction", redButtonName);
+    oocsi.addString("Event", "ON");
+    oocsi.sendMessage();
 
     //give user feedback on screen
   
@@ -232,9 +306,15 @@ if (redButtonState!=redButtonStatePrev)
     digitalWrite(redButtonLED, LOW);
 
     //send OOCSI message
+    oocsi.newMessage(DF_Channel);
+    oocsi.addString("device_id", DF_device_id);
+    oocsi.addString("Interaction", redButtonName);
+    oocsi.addString("Event", "OFF");
+    oocsi.sendMessage();
 
     //give user feedback on screen
- 
+    draw ("Registered event", redButtonName, 1);
+
 
   }
 
@@ -253,6 +333,11 @@ if (blueButtonState!=blueButtonStatePrev)
     digitalWrite(blueButtonLED, HIGH);
 
     //send OOCSI message
+    oocsi.newMessage(DF_Channel);
+    oocsi.addString("device_id", DF_device_id);
+    oocsi.addString("Interaction", blueButtonName);
+    oocsi.addString("Event", "ON");
+    oocsi.sendMessage();
 
     //give user feedback on screen
   
@@ -265,8 +350,14 @@ if (blueButtonState!=blueButtonStatePrev)
     digitalWrite(blueButtonLED, LOW);
 
     //send OOCSI message
+    oocsi.newMessage(DF_Channel);
+    oocsi.addString("device_id", DF_device_id);
+    oocsi.addString("Interaction", blueButtonName);
+    oocsi.addString("Event", "OFF");
+    oocsi.sendMessage();
 
     //give user feedback on screen
+    draw ("Registered event", blueButtonName, 1);
  
 
   }
@@ -286,17 +377,29 @@ if (yellowSwitchState!=yellowSwitchStatePrev)
     Serial.println("Yellow Switch is LEFT");
 
     //send OOCSI message
+    oocsi.newMessage(DF_Channel);
+    oocsi.addString("device_id", DF_device_id);
+    oocsi.addString("Interaction", yellowSwitchName);
+    oocsi.addString("Event", "LEFT");
+    oocsi.sendMessage();
 
     //give user feedback on screen
-  
+    draw ("Registered switch", yellowSwitchName, 1);
+
   } else
   {
     //serial feedback
     Serial.println("Yellow Switch is RIGHT");
 
     //send OOCSI message
+    oocsi.newMessage(DF_Channel);
+    oocsi.addString("device_id", DF_device_id);
+    oocsi.addString("Interaction", yellowSwitchName);
+    oocsi.addString("Event", "RIGHT");
+    oocsi.sendMessage();
 
     //give user feedback on screen
+    draw ("Registered switch", yellowSwitchName, 1);
  
 
   }
@@ -311,6 +414,11 @@ if (yellowButtonState)
     Serial.println("Yellow was pressed");
 
     //send OOCSI message
+    oocsi.newMessage(DF_Channel);
+    oocsi.addString("device_id", DF_device_id);
+    oocsi.addString("Interaction", yellowButtonName);
+    oocsi.addString("Event", "Pressed");
+    oocsi.sendMessage();
 
     //give user feedback on screen
 
@@ -328,8 +436,14 @@ void cameraShutter()
     Serial.println("Photo was taken");
 
     //send OOCSI message
+    oocsi.newMessage(DF_Channel);
+    oocsi.addString("device_id", DF_device_id);
+    oocsi.addString("Interaction", cameraButtonName);
+    oocsi.addString("Event", "Photo taken");
+    oocsi.sendMessage();
 
     //give user feedback on screen
+    draw ("Photo captured", "Uploading", 1);
 
     delay(250);
   
@@ -346,10 +460,15 @@ void recorderPress()
       Serial.println("Recording started");
 
       //send OOCSI message
+      oocsi.newMessage(DF_Channel);
+      oocsi.addString("device_id", DF_device_id);
+      oocsi.addString("Interaction", recorderButtonName);
+      oocsi.addString("Event", "Recording started");
+      oocsi.sendMessage();
 
       //give user feedback on screen
-
-      delay(250);
+      draw ("Recording start");
+      delay(1000);
     
     } else
     {
@@ -357,8 +476,14 @@ void recorderPress()
       Serial.println("Recording ended");
 
       //send OOCSI message
+      oocsi.newMessage(DF_Channel);
+      oocsi.addString("device_id", DF_device_id);
+      oocsi.addString("Interaction", recorderButtonName);
+      oocsi.addString("Event", "Recording ended");
+      oocsi.sendMessage();
 
       //give user feedback on screen
+      draw ("Recording end", "Uploading", 1);
 
       delay(250);
     }
@@ -391,6 +516,7 @@ void readGPS()
 
 //main loop ---------------------------------------------------------------------------
 void loop() {
+
     
 listenForButtons();
 delay(5);
