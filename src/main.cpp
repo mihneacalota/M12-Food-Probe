@@ -81,6 +81,13 @@ int recorderButton=16;
 const char* recorderButtonName="Recorder";
 int recorderButtonState = 0, recorderButtonStatePrev=0;
 
+
+
+int sleepSwitch=15;
+int sleepClock=0;
+
+
+
 //Display animations ------------------------------------------------------------------
 void draw(const char *s, const char *ss=" ", int loading=0)
 {
@@ -175,6 +182,10 @@ void setup() {
 
   draw("Connected to", ssid);
   delay (3000);
+
+  // sleep stuff
+  esp_sleep_enable_touchpad_wakeup();
+  sleepClock=millis();
 }
 
 
@@ -183,7 +194,7 @@ void setup() {
 void listenForButtons()
 {
   //screen test
-  draw ("Listening for", "interactions!");
+  Serial.println(sleepClock);
 
 
   //listen for toggle buttons module
@@ -513,6 +524,20 @@ void readGPS()
   delay(1000);
 }
 
+void checkSleep(int minutes)
+{ 
+  sleepClock=millis()-sleepClock;
+  int sleepTimer=minutes*60000;
+  if (sleepClock>sleepTimer)
+  {
+    draw("Going to sleep!");
+    delay (1000);
+    draw("");
+    esp_deep_sleep_start();
+  } 
+    
+}
+
 
 //main loop ---------------------------------------------------------------------------
 void loop() {
@@ -529,6 +554,7 @@ recorderPress();
 //readGPS(); 
 
 oocsi.check();
+checkSleep(.5);
 
 }
 
