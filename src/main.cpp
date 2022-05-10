@@ -8,25 +8,12 @@
 
 U8G2_SH1106_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
 
-
-
-//define GPS pins
-#include <SoftwareSerial.h>
-#include <TinyGPS++.h>
-
-static const int RXPin = 3, TXPin = 1;
-static const uint32_t GPSBaud = 9600;
-HardwareSerial neogps(1);
-TinyGPSPlus gps;
-SoftwareSerial ss(RXPin, TXPin);
-
-
 //define OOCSI stuff
 #include <OOCSI.h>
 #include <HTTPClient.h>
 
 //name of the current device on the OOCSI network
-const char *OOCSIName = "M12_Food_Probe_1";
+const char *OOCSIName = "M12_Food_Probe_Pilot";
 //the address of the OOCSI server here
 const char *hostserver = "oocsi.id.tue.nl";
 //name of the general oocsi channel
@@ -82,9 +69,16 @@ const char* recorderButtonName="Recorder";
 int recorderButtonState = 0, recorderButtonStatePrev=0;
 
 
+//sleep variables
+unsigned long startMillis, currentMillis;
 
-int sleepSwitch=15;
-int sleepClock=0;
+//SD Card variables
+// #include "FS.h"
+// #include "SD.h"
+
+// File myFile;
+// String dataMessage;
+// #define SD_CS 35
 
 
 
@@ -140,6 +134,10 @@ void draw(const char *s, const char *ss=" ", int loading=0)
   
 }
 
+void callback(){
+  //placeholder callback function
+}
+
 //setup function --------------------------------------------------------------------
 
 void setup() {
@@ -148,8 +146,6 @@ void setup() {
   u8g2.setFont(u8g2_font_8x13_mf);
   u8g2.enableUTF8Print();
 
-  //egin GPS
-  ss.begin(GPSBaud);
 
   //pin modes definitions
   pinMode(greenButton, INPUT_PULLUP);
@@ -165,37 +161,39 @@ void setup() {
   pinMode(cameraButton, INPUT_PULLUP);
   pinMode(recorderButton, INPUT_PULLUP);
 
+
   //begin serial
   Serial.begin(115200);
   Serial.println ("Hello");
   draw("Hello there!");
-
   delay(500);
 
-  draw("Connecting", "to WIFI!", 1);
+  //Setup interrupt on Touch Pad 3 (GPIO15)
+  touchAttachInterrupt(T3, callback, 40);
+  //Configure Touchpad as wakeup source
+  esp_sleep_enable_touchpad_wakeup();
 
+ 
+  
 
   //WIFI Connection
+  draw("Connecting", "to WIFI!", 1);
   oocsi.connect(OOCSIName, hostserver, ssid, password);
   Serial.print("Successfully connected to: ");
   Serial.println(ssid);
 
-  draw("Connected to", ssid);
-  delay (3000);
+  draw("Connected to", ssid);  
+  startMillis=millis();
+  delay (1000);
 
-  // sleep stuff
-  esp_sleep_enable_touchpad_wakeup();
-  sleepClock=millis();
 }
-
 
 //Custom Functions ---------------------------------------------------------------------
 
 void listenForButtons()
 {
   //screen test
-  Serial.println(sleepClock);
-
+  draw("Waiting...");
 
   //listen for toggle buttons module
   greenButtonStatePrev=greenButtonState;
@@ -261,6 +259,9 @@ if (greenButtonState!=greenButtonStatePrev)
     oocsi.addString("Interaction", greenButtonName);
     oocsi.addString("Event", "ON");
     oocsi.sendMessage();
+
+    //write to SD
+    
 
     //give user feedback on screen
   
@@ -503,40 +504,36 @@ void recorderPress()
 
 }
 
-void readGPS()
-{
-  gps.encode(ss.read());
-  Serial.print("Latitude= "); 
-  Serial.print(gps.location.lat(), 6);
-  Serial.print(" Longitude= "); 
-  Serial.println(gps.location.lng(), 6);
-  //Serial.println(ss.read());
-  if (ss.available() > 0){
-    //Serial.println("We have GPS");
-
-    if (gps.location.isUpdated()){
-      Serial.print("Latitude= "); 
-      Serial.print(gps.location.lat(), 6);
-      Serial.print(" Longitude= "); 
-      Serial.println(gps.location.lng(), 6);
+void sleepCheck(float minutes)
+{ 
+  currentMillis=millis();
+  if(redButtonState||greenButtonState||redButtonState||yellowButtonState||cameraButtonState||recorderButtonState)
+  {
+    startMillis=millis();
+  } 
+  else 
+  {
+    if ((currentMillis-startMillis)>(minutes*60000))
+    {    
+      //Go to sleep now
+      Serial.println("Going to sleep now");
+      draw("Going to sleep!", "3");
+      delay(1000);
+      draw("Going to sleep!", "2");
+      delay(1000);
+      draw("Going to sleep!", "1");
+      delay(1000);
+      draw("");
+      esp_deep_sleep_start();
+      Serial.println("This will never be printed");
     }
   }
-  delay(1000);
+  
 }
 
-void checkSleep(int minutes)
-{ 
-  sleepClock=millis()-sleepClock;
-  int sleepTimer=minutes*60000;
-  if (sleepClock>sleepTimer)
-  {
-    draw("Going to sleep!");
-    delay (1000);
-    draw("");
-    esp_deep_sleep_start();
-  } 
-    
-}
+
+
+
 
 
 //main loop ---------------------------------------------------------------------------
@@ -554,7 +551,7 @@ recorderPress();
 //readGPS(); 
 
 oocsi.check();
-checkSleep(.5);
+sleepCheck(1);
 
 }
 
