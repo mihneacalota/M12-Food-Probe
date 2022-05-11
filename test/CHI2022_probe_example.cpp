@@ -3,11 +3,11 @@
 // This sketch will read an uploaded file and increment a counter file
 // each time the sketch is booted.
 
-// Be sure to install the Pico LittleFS Data Upload extension for the
+// Be sure to install the Pico LITTLEFS Data Upload extension for the
 // Arduino IDE from:
-//    https://github.com/earlephilhower/arduino-pico-littlefs-plugin/
+//    https://github.com/earlephilhower/arduino-pico-LITTLEFS-plugin/
 // The latest release is available from:
-//    https://github.com/earlephilhower/arduino-pico-littlefs-plugin/releases
+//    https://github.com/earlephilhower/arduino-pico-LITTLEFS-plugin/releases
 
 // Before running:
 // 1) Select Tools->Flash Size->(some size with a FS/filesystem)
@@ -16,9 +16,12 @@
 
 #include <LITTLEFS.h>
 #include "FS.h"
+#define SPIFFS LITTLEFS
 #include "DFDataset.h"
+#include "WiFi.h"
+
 // #include <Arduino_LSM6DSOX.h>
-// #include <PDM.h>
+// #include <PDM.h> 
 
 // SSID of your Wifi network, the library currently does not support WPA2 Enterprise networks
 const char* ssid = "wifi name bla";
@@ -97,17 +100,17 @@ void setup() {
 
   // --------------------------------------------------------------
 
-  if (!IMU.begin()) {
-    Serial.println("Failed to initialize IMU!");
-    while (1);
-  } else {
-    Serial.print("IMU sample rate: ");
-    Serial.println(IMU.accelerationSampleRate());
-  }
+  // if (!IMU.begin()) {
+  //   Serial.println("Failed to initialize IMU!");
+  //   while (1);
+  // } else {
+  //   Serial.print("IMU sample rate: ");
+  //   Serial.println(IMU.accelerationSampleRate());
+  // }
 
   // --------------------------------------------------------------
 
-  PDM.onReceive(onPDMdata);
+  // PDM.onReceive(onPDMdata);
   // Optionally set the gain
   // Defaults to 20 on the BLE Sense and -10 on the Portenta Vision Shields
   // PDM.setGain(30);
@@ -115,14 +118,14 @@ void setup() {
   // - one channel (mono mode)
   // - a 16 kHz sample rate for the Arduino Nano 33 BLE Sense 32
   // - a 32 kHz or 64 kHz sample rate for the Arduino Portenta Vision Shields
-  if (!PDM.begin(channels, frequency)) {
-    Serial.println("Failed to start PDM!");
-    while (1);
-  }
+  // if (!PDM.begin(channels, frequency)) {
+  //   Serial.println("Failed to start PDM!");
+  //   while (1);
+  // }
 
   // --------------------------------------------------------------
 
-  LittleFS.begin();
+  LITTLEFS.begin();
   
   // --------------------------------------------------------------
 
@@ -168,9 +171,9 @@ void loop() {
   //  }
   //  Serial.print(temp3);
 
-  logAccelerationLevel();
+  // logAccelerationLevel();
 
-  soundPressure();
+  // soundPressure();
 
   // --------------------------------------------------------------
 
@@ -182,7 +185,7 @@ void loop() {
     if (checkConnection()) {
       Serial.println("Connecting successful. Starting upload...");
 
-      File i = LittleFS.open("logdata.txt", "r");
+      File i = LITTLEFS.open("logdata.txt", "r");
       if (i) {
         while (i.available()) {
           String str = i.readStringUntil('\n');
@@ -212,7 +215,7 @@ void loop() {
 
       Serial.println("Cleaning local log...");
 
-      LittleFS.remove("logdata.txt");
+      LITTLEFS.remove("logdata.txt");
 
       Serial.println("Resume logging...");
     }
@@ -241,7 +244,7 @@ void logData() {
   //  Serial.print(buffer);
 
   // append to logdata file
-  File f = LittleFS.open("logdata.txt", "a");
+  File f = LITTLEFS.open("logdata.txt", "a");
   if (f) {
     f.write(buffer, strlen(buffer));
     f.close();
@@ -255,29 +258,29 @@ void logData() {
   sqsum = 0;
 }
 
-void logAccelerationLevel() {
-  float x, y, z;
-  if (IMU.accelerationAvailable()) {
-    IMU.readAcceleration(x, y, z);
-  }
+// void logAccelerationLevel() {
+//   float x, y, z;
+//   if (IMU.accelerationAvailable()) {
+//     IMU.readAcceleration(x, y, z);
+//   }
 
-  // filter IMU accel data
-  accelFilter += (sqrt((sq(x) + sq(y) + sq(z)) / 3) - accelFilter) / 10;
-  acceleration += abs(sqrt((sq(x) + sq(y) + sq(z)) / 3) - accelFilter);
-}
+//   // filter IMU accel data
+//   accelFilter += (sqrt((sq(x) + sq(y) + sq(z)) / 3) - accelFilter) / 10;
+//   acceleration += abs(sqrt((sq(x) + sq(y) + sq(z)) / 3) - accelFilter);
+// }
 
-void soundPressure() {
-  if (samplesRead) {
-    double squareMean = 0;
-    for (int i = 0; i < samplesRead; i++) {
-      squareMean += sq(sampleBuffer[i]);
-    }
-    sqsum += squareMean / samplesRead;
+// void soundPressure() {
+//   if (samplesRead) {
+//     double squareMean = 0;
+//     for (int i = 0; i < samplesRead; i++) {
+//       squareMean += sq(sampleBuffer[i]);
+//     }
+//     sqsum += squareMean / samplesRead;
 
-    // Clear the read count
-    samplesRead = 0;
-  }
-}
+//     // Clear the read count
+//     samplesRead = 0;
+//   }
+// }
 
 bool checkConnection() {
   WiFiClient wifi;
@@ -296,13 +299,13 @@ bool checkConnection() {
    NOTE: This callback is executed as part of an ISR.
    Therefore using `Serial` to print messages inside this function isn't supported.
  * */
-void onPDMdata() {
-  // Query the number of available bytes
-  int bytesAvailable = PDM.available();
+// void onPDMdata() {
+//   // Query the number of available bytes
+//   int bytesAvailable = PDM.available();
 
-  // Read into the sample buffer
-  PDM.read(sampleBuffer, bytesAvailable);
+//   // Read into the sample buffer
+//   PDM.read(sampleBuffer, bytesAvailable);
 
-  // 16-bit, 2 bytes per sample
-  samplesRead = bytesAvailable / 2;
-}
+//   // 16-bit, 2 bytes per sample
+//   samplesRead = bytesAvailable / 2;
+// }

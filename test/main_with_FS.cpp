@@ -1,4 +1,7 @@
 #include <Arduino.h>
+#include <LITTLEFS.h>
+#include "FS.h"
+#include "HTTPClient.h"
 
 //define screen stuff
 #include <U8g2lib.h>
@@ -73,14 +76,10 @@ int recorderButtonState = 0, recorderButtonStatePrev=0;
 
 //sleep variables
 unsigned long startMillis, currentMillis;
+long timestamp=0;
 
-//SD Card variables
-// #include "FS.h"
-// #include "SD.h"
-
-// File myFile;
-// String dataMessage;
-// #define SD_CS 35
+//FS Card variables
+short sampleBuffer[512];
 
 
 
@@ -172,23 +171,37 @@ void setup() {
   draw("Hello there!");
   delay(500);
 
+  LITTLEFS.begin();
+
   //Setup interrupt on Touch Pad 3 (GPIO15)
   touchAttachInterrupt(T3, callback, 40);
   //Configure Touchpad as wakeup source
   esp_sleep_enable_touchpad_wakeup();
 
- 
-  
 
   //WIFI Connection
   draw("Connecting", "to WIFI!", 1);
   oocsi.connect(OOCSIName, hostserver, ssid, password);
   Serial.print("Successfully connected to: ");
   Serial.println(ssid);
+  draw("Connected to", ssid);
 
-  draw("Connected to", ssid);  
+  //get current start up millis  
   startMillis=millis();
+
+  // check timestamp
+//   while (timestamp <= 0) {
+//     // set time with current run time as offset
+//     timestamp = WiFi.getTime() - millis();
+//     if (timestamp > 0) {
+//       Serial.print("Acquired time: "); Serial.println(timestamp);
+//       Serial.print("Time offset: "); Serial.println(millis());
+//     }
+
+//     delay(500);
+//   }
   
+  //initialize the switch with current state at start up
   if (analogRead(yellowSwitch)>=3500)
   yellowSwitchState=1;
   else
@@ -560,7 +573,57 @@ void sleepCheck(float minutes)
   
 }
 
+// bool checkConnection() {
+//   WiFiClient wifi;
+//   HTTPClient http = HttpClient(wifi, "data.id.tue.nl", 80);
+//   http.beginRequest();
+//   http.get("/");
+//   http.beginBody();
+//   http.endRequest();
 
+//   int httpCode = http.responseStatusCode();
+//   return httpCode == 200;
+// }
+
+void sendData(){
+
+File i = LITTLEFS.open("logdata.txt", "r");
+      if (i) {
+        while (i.available()) {
+          String str = i.readStringUntil('\n');
+          const char* buf = str.c_str();
+          char device_id, interaction_name, event_name;
+          int assigned = sscanf(buf, "device_id %c Interaction %c Event %c", &device_id, &interaction_name, &event_name);
+          if (assigned == 3) {
+            // log data to backend
+            oocsi.newMessage(DF_Channel);
+            oocsi.addString("device_id", device_id);
+            oocsi.addString("Interaction", interaction_name);
+            oocsi.addString("Event", event_name);
+            oocsi.sendMessage();
+          }
+          Serial.print("|");
+        }
+        Serial.println("---------------");
+        i.close();
+      }
+
+}
+
+void logData(const char event_name, const char interaction_name) {
+
+  // print to flash storage format
+  char buffer[85];
+  snprintf(buffer, 84, "device_id %c Interaction %c Event %c\n", DF_device_id, interaction_name, event_name);
+  //  Serial.print(buffer);
+
+  // append to logdata file
+  File f = LITTLEFS.open("logdata.txt", "a");
+  if (f) {
+    f.write(buffer, strlen(buffer));
+    f.close();
+  }
+}
 
 
 
