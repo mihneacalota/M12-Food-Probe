@@ -22,9 +22,9 @@ const char *DF_Channel = "food_probe_data";
 const char *DF_device_id = "d22ef808fbc614293";
 
 // SSID of your Wifi network, the library currently does not support WPA2 Enterprise networks
-const char* ssid = "The Donut Wifi";
+const char* ssid = "Mihnea";
 // Password of your Wifi network.
-const char* password = "donutismad";
+const char* password = "12345678";
 
 // OOCSI reference for the entire sketch
 OOCSI oocsi = OOCSI();
