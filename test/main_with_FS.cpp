@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <LittleFS.h>
 #include "FS.h"
-#include "HTTPClient.h"
 
 //define screen stuff
 #include <U8g2lib.h>
