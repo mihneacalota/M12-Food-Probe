@@ -13,7 +13,7 @@ U8G2_SH1106_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
 #include <HTTPClient.h>
 
 //name of the current device on the OOCSI network
-const char *OOCSIName = "M12_Food_Probe_Pilot2";
+const char *OOCSIName = "M12_Food_Probe_Predemoday";
 //the address of the OOCSI server here
 const char *hostserver = "oocsi.id.tue.nl";
 //name of the general oocsi channel
@@ -22,9 +22,9 @@ const char *DF_Channel = "food_probe_data";
 const char *DF_device_id = "d22ef808fbc614293";
 
 // SSID of your Wifi network, the library currently does not support WPA2 Enterprise networks
-const char* ssid = "The Donut Wifi";
+const char* ssid = "Mihnea";
 // Password of your Wifi network.
-const char* password = "donutismad";
+const char* password = "12345678";
 
 // OOCSI reference for the entire sketch
 OOCSI oocsi = OOCSI();

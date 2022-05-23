@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <LITTLEFS.h>
+#include <LittleFS.h>
 #include "FS.h"
 #include "HTTPClient.h"
 
