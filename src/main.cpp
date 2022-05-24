@@ -13,18 +13,18 @@ U8G2_SH1106_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
 #include <HTTPClient.h>
 
 //name of the current device on the OOCSI network
-const char *OOCSIName = "M12_Food_Probe_Predemoday";
+const char *OOCSIName = "M12_Food_Probe_Test";
 //the address of the OOCSI server here
 const char *hostserver = "oocsi.id.tue.nl";
 //name of the general oocsi channel
 const char *DF_Channel = "food_probe_data";
 //id of teh device in DF
-const char *DF_device_id = "d22ef808fbc614293";
+const char *DF_device_id = "d79bedf283999469f";
 
 // SSID of your Wifi network, the library currently does not support WPA2 Enterprise networks
-const char* ssid = "Mihnea";
+const char* ssid = "The Donut Wifi";
 // Password of your Wifi network.
-const char* password = "12345678";
+const char* password = "donutismad";
 
 // OOCSI reference for the entire sketch
 OOCSI oocsi = OOCSI();
@@ -157,7 +157,7 @@ void setup() {
   pinMode(blueButton, INPUT_PULLUP);
   pinMode(blueButtonLED, OUTPUT);
 
-  pinMode(yellowButton, INPUT);
+  pinMode(yellowButton, INPUT_PULLDOWN);
   pinMode(yellowSwitch, INPUT);
 
   pinMode(cameraButton, INPUT_PULLUP);
@@ -226,13 +226,13 @@ void listenForButtons()
 
 
   //listen for open tracker button and switch
-  if (analogRead(yellowButton)>=3500)
+  if (analogRead(yellowButton)>=4000)
   yellowButtonState=1;
   else
   yellowButtonState=0;
 
   yellowSwitchStatePrev=yellowSwitchState;
-  if (analogRead(yellowSwitch)>=3500)
+  if (analogRead(yellowSwitch)>=4000)
   yellowSwitchState=1;
   else
   yellowSwitchState=0;
