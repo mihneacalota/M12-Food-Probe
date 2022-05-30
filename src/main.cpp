@@ -13,7 +13,7 @@ U8G2_SH1106_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
 #include <HTTPClient.h>
 
 //name of the current device on the OOCSI network
-const char *OOCSIName = "M12_Food_Probe_Test";
+const char *OOCSIName = "M12_Food_Probe_P2";
 //the address of the OOCSI server here
 const char *hostserver = "oocsi.id.tue.nl";
 //name of the general oocsi channel
@@ -22,9 +22,9 @@ const char *DF_Channel = "food_probe_data";
 const char *DF_device_id = "d79bedf283999469f";
 
 // SSID of your Wifi network, the library currently does not support WPA2 Enterprise networks
-const char* ssid = "The Donut Wifi";
+const char* ssid = "Mihnea";
 // Password of your Wifi network.
-const char* password = "donutismad";
+const char* password = "12345678";
 
 // OOCSI reference for the entire sketch
 OOCSI oocsi = OOCSI();
@@ -143,6 +143,7 @@ void callback(){
 //setup function --------------------------------------------------------------------
 
 void setup() {
+
   //begin u8g2
   u8g2.begin();
   u8g2.setFont(u8g2_font_8x13_mf);
@@ -181,8 +182,36 @@ void setup() {
   
 
   //WIFI Connection
+  
   draw("Connecting", "to WIFI!", 1);
-  oocsi.connect(OOCSIName, hostserver, ssid, password);
+
+  startMillis=millis();
+
+  if(WiFi.status()!=WL_CONNECTED){
+    WiFi.begin(ssid, password);
+  }
+
+  while((WiFi.status()!=WL_CONNECTED)&&((millis()-startMillis))<=20000){
+    delay(500);
+    Serial.print(".");
+  }
+
+  if(WiFi.status()!=WL_CONNECTED){
+    Serial.println("Go to sleep, no wifi");
+    //Go to sleep now
+    Serial.println("Going to sleep now");
+    draw("Going to sleep!", "3");
+    delay(1000);
+    draw("Going to sleep!", "2");
+    delay(1000);
+    draw("Going to sleep!", "1");
+    delay(1000);
+    draw("");
+    esp_deep_sleep_start();
+    Serial.println("This will never be printed");
+  }
+
+  oocsi.connect(OOCSIName, hostserver);
   Serial.print("Successfully connected to: ");
   Serial.println(ssid);
 
